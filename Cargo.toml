@@ -20,27 +20,35 @@ crate-type = ["lib", "cdylib", "staticlib"]
 [features]
 default = []
 angle = ["wgc/angle"]
-vulkan-portability = ["wgc/vulkan-portability"]
+vulkan = ["wgc/vulkan"]
 
-[dependencies.wgc]
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies.wgc]
 package = "wgpu-core"
-git = "https://github.com/gfx-rs/wgpu"
-rev = "628a25e"
+git = "https://github.com/wozeparrot/wgpu/"
+rev = "601cb1b818b28f1dd117bffcc276995f3418e418"
 # path = "../wgpu/wgpu-core"
-version = "0.14.2"
-features = ["raw-window-handle", "trace"]
+features = ["raw-window-handle", "trace", "wgsl"]
+version = "0.14.1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies.wgc]
+package = "wgpu-core"
+git = "https://github.com/wozeparrot/wgpu/"
+rev = "601cb1b818b28f1dd117bffcc276995f3418e418"
+# path = "../wgpu/wgpu-core"
+features = ["raw-window-handle", "trace", "wgsl", "id32"]
+version = "0.14.1"
 
 [dependencies.wgt]
 package = "wgpu-types"
-git = "https://github.com/gfx-rs/wgpu"
-rev = "628a25e"
+git = "https://github.com/wozeparrot/wgpu/"
+rev = "601cb1b818b28f1dd117bffcc276995f3418e418"
 # path = "../wgpu/wgpu-types"
-version = "0.14"
+version = "0.14.1"
 
 [dependencies.naga]
 git = "https://github.com/gfx-rs/naga"
-rev = "c52d9102"
-# version = "0.10"
+rev = "e98bd92"
+version = "0.10"
 features = ["spv-in", "glsl-in"]
 
 [dependencies]
@@ -51,7 +59,7 @@ log = "0.4"
 thiserror = "1"
 
 [build-dependencies]
-bindgen = "0.60.1"
+bindgen = "0.63.0"
 cfg_aliases = "0.1"
 
 [workspace]
