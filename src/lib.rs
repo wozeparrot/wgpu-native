@@ -1,5 +1,12 @@
 use native::{Handle, IntoHandle, IntoHandleWithContext, UnwrapId};
 use std::{borrow::Cow, collections::HashMap, ffi::CString, sync::Arc, sync::Mutex};
+
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::JsCast;
+
+#[cfg(target_arch = "wasm32")]
+use web_sys;
+
 use wgc::id;
 
 pub mod command;
@@ -428,6 +435,8 @@ enum CreateSurfaceParams {
     ),
     #[cfg(any(target_os = "ios", target_os = "macos"))]
     Metal(*mut std::ffi::c_void),
+    #[cfg(target_arch = "wasm32")]
+    Canvas(web_sys::HtmlCanvasElement),
 }
 
 #[no_mangle]
@@ -442,7 +451,8 @@ pub unsafe extern "C" fn wgpuInstanceCreateSurface(
             WGPUSType_SurfaceDescriptorFromXlibWindow => native::WGPUSurfaceDescriptorFromXlibWindow,
             WGPUSType_SurfaceDescriptorFromWaylandSurface => native::WGPUSurfaceDescriptorFromWaylandSurface,
             WGPUSType_SurfaceDescriptorFromMetalLayer => native::WGPUSurfaceDescriptorFromMetalLayer,
-            WGPUSType_SurfaceDescriptorFromAndroidNativeWindow => native::WGPUSurfaceDescriptorFromAndroidNativeWindow)
+            WGPUSType_SurfaceDescriptorFromAndroidNativeWindow => native::WGPUSurfaceDescriptorFromAndroidNativeWindow,
+            WGPUSType_SurfaceDescriptorFromCanvasHTMLSelector => native::WGPUSurfaceDescriptorFromCanvasHTMLSelector)
     );
 
     let context = &instance.as_ref().expect("invalid instance").context;
@@ -450,6 +460,8 @@ pub unsafe extern "C" fn wgpuInstanceCreateSurface(
         CreateSurfaceParams::Raw((rdh, rwh)) => context.instance_create_surface(rdh, rwh, ()),
         #[cfg(any(target_os = "ios", target_os = "macos"))]
         CreateSurfaceParams::Metal(layer) => context.instance_create_surface_metal(layer, ()),
+        #[cfg(target_arch = "wasm32")]
+        CreateSurfaceParams::Canvas(canvas) => context.create_surface_webgl_canvas(&canvas, ()),
     };
 
     surface_id.into_handle_with_context(context)
@@ -463,6 +475,7 @@ unsafe fn map_surface(
     _wl: Option<&native::WGPUSurfaceDescriptorFromWaylandSurface>,
     _metal: Option<&native::WGPUSurfaceDescriptorFromMetalLayer>,
     _android: Option<&native::WGPUSurfaceDescriptorFromAndroidNativeWindow>,
+    _canvas: Option<&native::WGPUSurfaceDescriptorFromCanvasHTMLSelector>,
 ) -> CreateSurfaceParams {
     #[cfg(windows)]
     if let Some(win) = _win {
@@ -536,6 +549,24 @@ unsafe fn map_surface(
             raw_window_handle::RawDisplayHandle::Android(display_handle),
             raw_window_handle::RawWindowHandle::AndroidNdk(window_handle),
         ));
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    if let Some(canvas) = _canvas {
+        let canvas_element: web_sys::HtmlCanvasElement = web_sys::window()
+            .and_then(|win| win.document())
+            .expect("no window or document")
+            .query_selector(
+                &(unsafe { std::ffi::CStr::from_ptr(canvas.selector) }
+                    .to_string_lossy()
+                    .to_string()),
+            )
+            .expect("query for canvas failed")
+            .expect("no canvas")
+            .dyn_into()
+            .expect("not a canvas");
+
+        return CreateSurfaceParams::Canvas(canvas_element);
     }
 
     panic!("Error: Unsupported Surface");
