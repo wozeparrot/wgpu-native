@@ -38,6 +38,10 @@ rev = "601cb1b818b28f1dd117bffcc276995f3418e418"
 features = ["raw-window-handle", "trace", "wgsl", "id32"]
 version = "0.14.1"
 
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+web-sys = "0.3.60"
+wasm-bindgen = "0.2.83"
+
 [dependencies.wgt]
 package = "wgpu-types"
 git = "https://github.com/wozeparrot/wgpu/"

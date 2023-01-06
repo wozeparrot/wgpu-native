@@ -970,6 +970,8 @@ dependencies = [
  "paste",
  "raw-window-handle",
  "thiserror",
+ "wasm-bindgen",
+ "web-sys",
  "wgpu-core",
  "wgpu-types",
 ]
