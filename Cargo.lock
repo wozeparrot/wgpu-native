@@ -501,29 +501,14 @@ dependencies = [
  "indexmap",
  "log",
  "num-traits",
+ "petgraph",
+ "pp-rs",
  "rustc-hash",
  "serde",
  "spirv",
  "termcolor",
  "thiserror",
  "unicode-xid",
-]
-
-[[package]]
-name = "naga"
-version = "0.10.0"
-source = "git+https://github.com/gfx-rs/naga?rev=e98bd92#e98bd9264c3a6b04dff15a6b1213c0c80201740a"
-dependencies = [
- "bit-set",
- "bitflags",
- "indexmap",
- "log",
- "num-traits",
- "petgraph",
- "pp-rs",
- "rustc-hash",
- "spirv",
- "thiserror",
 ]
 
 [[package]]
@@ -931,7 +916,7 @@ dependencies = [
  "codespan-reporting",
  "fxhash",
  "log",
- "naga 0.10.0 (git+https://github.com/gfx-rs/naga?rev=e7fc8e6)",
+ "naga",
  "parking_lot",
  "profiling",
  "raw-window-handle",
@@ -967,7 +952,7 @@ dependencies = [
  "libloading",
  "log",
  "metal",
- "naga 0.10.0 (git+https://github.com/gfx-rs/naga?rev=e7fc8e6)",
+ "naga",
  "objc",
  "parking_lot",
  "profiling",
@@ -984,13 +969,13 @@ dependencies = [
 
 [[package]]
 name = "wgpu-native"
-version = "0.6.0"
+version = "0.14.1"
 dependencies = [
  "bindgen",
  "cfg_aliases",
  "lazy_static",
  "log",
- "naga 0.10.0 (git+https://github.com/gfx-rs/naga?rev=e98bd92)",
+ "naga",
  "paste",
  "raw-window-handle",
  "thiserror",

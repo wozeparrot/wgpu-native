@@ -1,6 +1,6 @@
 [package]
 name = "wgpu-native"
-version = "0.6.0"
+version = "0.14.1"
 authors = [
 	"Dzmitry Malyshau <kvark@mozilla.com>",
 	"Joshua Groves <josh@joshgroves.com>",
@@ -33,7 +33,6 @@ version = "0.14.1"
 package = "wgpu-core"
 git = "https://github.com/wozeparrot/wgpu/"
 rev = "d928f2f3f33bc63f29674b2b9f8264523f2a1144"
-# path = "../wgpu/wgpu-core"
 features = ["raw-window-handle", "trace", "wgsl", "id32"]
 version = "0.14.1"
 
@@ -45,12 +44,11 @@ wasm-bindgen = "0.2.83"
 package = "wgpu-types"
 git = "https://github.com/wozeparrot/wgpu/"
 rev = "d928f2f3f33bc63f29674b2b9f8264523f2a1144"
-# path = "../wgpu/wgpu-types"
 version = "0.14.1"
 
 [dependencies.naga]
 git = "https://github.com/gfx-rs/naga"
-rev = "e98bd92"
+rev = "e7fc8e6"
 version = "0.10"
 features = ["spv-in", "glsl-in"]
 
