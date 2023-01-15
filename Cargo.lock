@@ -102,6 +102,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
+name = "bitflags_serde_shim"
+version = "0.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e678d043c18557c001a9f81be1c04e09339f9c990b8d5e20801e7ca4a1c6f244"
+dependencies = [
+ "bitflags",
+ "serde",
+]
+
+[[package]]
 name = "block"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -287,7 +297,7 @@ checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
 [[package]]
 name = "glow"
 version = "0.11.2"
-source = "git+https://github.com/grovesNL/glow?rev=c8a011fcd57a5c68cc917ed394baa484bdefc909#c8a011fcd57a5c68cc917ed394baa484bdefc909"
+source = "git+https://github.com/grovesNL/glow/?rev=c8a011fcd57a5c68cc917ed394baa484bdefc909#c8a011fcd57a5c68cc917ed394baa484bdefc909"
 dependencies = [
  "js-sys",
  "slotmap",
@@ -482,7 +492,7 @@ dependencies = [
 [[package]]
 name = "naga"
 version = "0.10.0"
-source = "git+https://github.com/gfx-rs/naga?rev=e98bd92#e98bd9264c3a6b04dff15a6b1213c0c80201740a"
+source = "git+https://github.com/gfx-rs/naga?rev=e7fc8e6#e7fc8e64f2f23397b149217ecce6e123c5aa5092"
 dependencies = [
  "bit-set",
  "bitflags",
@@ -491,14 +501,29 @@ dependencies = [
  "indexmap",
  "log",
  "num-traits",
- "petgraph",
- "pp-rs",
  "rustc-hash",
  "serde",
  "spirv",
  "termcolor",
  "thiserror",
  "unicode-xid",
+]
+
+[[package]]
+name = "naga"
+version = "0.10.0"
+source = "git+https://github.com/gfx-rs/naga?rev=e98bd92#e98bd9264c3a6b04dff15a6b1213c0c80201740a"
+dependencies = [
+ "bit-set",
+ "bitflags",
+ "indexmap",
+ "log",
+ "num-traits",
+ "petgraph",
+ "pp-rs",
+ "rustc-hash",
+ "spirv",
+ "thiserror",
 ]
 
 [[package]]
@@ -897,7 +922,7 @@ dependencies = [
 [[package]]
 name = "wgpu-core"
 version = "0.14.1"
-source = "git+https://github.com/wozeparrot/wgpu/?rev=601cb1b818b28f1dd117bffcc276995f3418e418#601cb1b818b28f1dd117bffcc276995f3418e418"
+source = "git+https://github.com/wozeparrot/wgpu/?rev=d928f2f3f33bc63f29674b2b9f8264523f2a1144#d928f2f3f33bc63f29674b2b9f8264523f2a1144"
 dependencies = [
  "arrayvec",
  "bit-vec",
@@ -906,7 +931,7 @@ dependencies = [
  "codespan-reporting",
  "fxhash",
  "log",
- "naga",
+ "naga 0.10.0 (git+https://github.com/gfx-rs/naga?rev=e7fc8e6)",
  "parking_lot",
  "profiling",
  "raw-window-handle",
@@ -922,7 +947,7 @@ dependencies = [
 [[package]]
 name = "wgpu-hal"
 version = "0.14.1"
-source = "git+https://github.com/wozeparrot/wgpu/?rev=601cb1b818b28f1dd117bffcc276995f3418e418#601cb1b818b28f1dd117bffcc276995f3418e418"
+source = "git+https://github.com/wozeparrot/wgpu/?rev=d928f2f3f33bc63f29674b2b9f8264523f2a1144#d928f2f3f33bc63f29674b2b9f8264523f2a1144"
 dependencies = [
  "android_system_properties",
  "arrayvec",
@@ -939,11 +964,10 @@ dependencies = [
  "gpu-descriptor",
  "js-sys",
  "khronos-egl",
- "libc",
  "libloading",
  "log",
  "metal",
- "naga",
+ "naga 0.10.0 (git+https://github.com/gfx-rs/naga?rev=e7fc8e6)",
  "objc",
  "parking_lot",
  "profiling",
@@ -966,7 +990,7 @@ dependencies = [
  "cfg_aliases",
  "lazy_static",
  "log",
- "naga",
+ "naga 0.10.0 (git+https://github.com/gfx-rs/naga?rev=e98bd92)",
  "paste",
  "raw-window-handle",
  "thiserror",
@@ -979,9 +1003,10 @@ dependencies = [
 [[package]]
 name = "wgpu-types"
 version = "0.14.1"
-source = "git+https://github.com/wozeparrot/wgpu/?rev=601cb1b818b28f1dd117bffcc276995f3418e418#601cb1b818b28f1dd117bffcc276995f3418e418"
+source = "git+https://github.com/wozeparrot/wgpu/?rev=d928f2f3f33bc63f29674b2b9f8264523f2a1144#d928f2f3f33bc63f29674b2b9f8264523f2a1144"
 dependencies = [
  "bitflags",
+ "bitflags_serde_shim",
  "serde",
 ]
 
