@@ -20,21 +20,20 @@ crate-type = ["lib", "cdylib", "staticlib"]
 [features]
 default = []
 angle = ["wgc/angle"]
-vulkan-portability = ["wgc/vulkan-portability"]
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies.wgc]
 package = "wgpu-core"
 git = "https://github.com/wozeparrot/wgpu/"
-rev = "d928f2f3f33bc63f29674b2b9f8264523f2a1144"
+rev = "fb1b251e8bb7914d297d03d92518235adabb1cd4"
 features = ["raw-window-handle", "trace", "wgsl"]
-version = "0.14.1"
+version = "0.15.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies.wgc]
 package = "wgpu-core"
 git = "https://github.com/wozeparrot/wgpu/"
-rev = "d928f2f3f33bc63f29674b2b9f8264523f2a1144"
+rev = "fb1b251e8bb7914d297d03d92518235adabb1cd4"
 features = ["raw-window-handle", "trace", "wgsl", "id32"]
-version = "0.14.1"
+version = "0.15.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-sys = "0.3.60"
@@ -43,8 +42,8 @@ wasm-bindgen = "0.2.83"
 [dependencies.wgt]
 package = "wgpu-types"
 git = "https://github.com/wozeparrot/wgpu/"
-rev = "d928f2f3f33bc63f29674b2b9f8264523f2a1144"
-version = "0.14.1"
+rev = "fb1b251e8bb7914d297d03d92518235adabb1cd4"
+version = "0.15.0"
 
 [dependencies.naga]
 git = "https://github.com/gfx-rs/naga"
