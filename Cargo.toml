@@ -9,8 +9,8 @@ authors = [
 ]
 edition = "2021"
 description = "WebGPU native implementation on gfx-hal"
-homepage = "https://github.com/gfx-rs/wgpu-native"
-repository = "https://github.com/gfx-rs/wgpu-native"
+homepage = "https://github.com/wozeparrot/wgpu-native"
+repository = "https://github.com/wozeparrot/wgpu-native"
 keywords = ["graphics"]
 license = "MIT OR Apache-2.0"
 
@@ -18,38 +18,53 @@ license = "MIT OR Apache-2.0"
 crate-type = ["lib", "cdylib", "staticlib"]
 
 [features]
-default = []
+default = ["wgsl", "spirv", "glsl", "trace"]
+
 angle = ["wgc/angle"]
+vulkan-portability = ["wgc/vulkan"]
+wgsl = ["wgc/wgsl"]
+spirv = ["naga/spv-in"]
+glsl = ["naga/glsl-in"]
+trace = ["wgc/trace"]
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies.wgc]
+[dependencies.wgc]
 package = "wgpu-core"
-git = "https://github.com/wozeparrot/wgpu/"
+git = "https://github.com/wozeparrot/wgpu"
 rev = "fb1b251e8bb7914d297d03d92518235adabb1cd4"
-features = ["raw-window-handle", "trace", "wgsl"]
 version = "0.15.0"
+features = ["raw-window-handle", "gles"]
 
-[target.'cfg(target_arch = "wasm32")'.dependencies.wgc]
+[target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies.wgc]
 package = "wgpu-core"
-git = "https://github.com/wozeparrot/wgpu/"
+git = "https://github.com/wozeparrot/wgpu"
 rev = "fb1b251e8bb7914d297d03d92518235adabb1cd4"
-features = ["raw-window-handle", "trace", "wgsl", "id32"]
 version = "0.15.0"
+features = ["metal"]
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-web-sys = "0.3.60"
-wasm-bindgen = "0.2.83"
+[target.'cfg(windows)'.dependencies.wgc]
+package = "wgpu-core"
+git = "https://github.com/wozeparrot/wgpu"
+rev = "fb1b251e8bb7914d297d03d92518235adabb1cd4"
+version = "0.15.0"
+features = ["dx11", "dx12"]
+
+[target.'cfg(any(windows, all(unix, not(target_arch = "emscripten"), not(target_os = "ios"), not(target_os = "macos"))))'.dependencies.wgc]
+package = "wgpu-core"
+git = "https://github.com/wozeparrot/wgpu"
+rev = "fb1b251e8bb7914d297d03d92518235adabb1cd4"
+version = "0.15.0"
+features = ["vulkan"]
 
 [dependencies.wgt]
 package = "wgpu-types"
-git = "https://github.com/wozeparrot/wgpu/"
+git = "https://github.com/wozeparrot/wgpu"
 rev = "fb1b251e8bb7914d297d03d92518235adabb1cd4"
 version = "0.15.0"
 
 [dependencies.naga]
 git = "https://github.com/gfx-rs/naga"
-rev = "e7fc8e6"
-version = "0.10"
-features = ["spv-in", "glsl-in"]
+rev = "f0edae8"
+version = "0.11"
 
 [dependencies]
 lazy_static = "1.4"
