@@ -1,6 +1,6 @@
 [package]
 name = "wgpu-native"
-version = "0.14.1"
+version = "0.0.0"
 authors = [
 	"Dzmitry Malyshau <kvark@mozilla.com>",
 	"Joshua Groves <josh@joshgroves.com>",
@@ -74,8 +74,7 @@ log = "0.4"
 thiserror = "1"
 
 [build-dependencies]
-bindgen = "0.63.0"
-cfg_aliases = "0.1"
+bindgen = "0.63"
 
 [workspace]
 resolver = "2"

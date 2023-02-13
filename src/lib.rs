@@ -1,3 +1,4 @@
+use crate::conv::map_instance_descriptor;
 use native::{Handle, IntoHandle, IntoHandleWithContext, UnwrapId};
 use std::{borrow::Cow, collections::HashMap, ffi::CString, sync::Arc, sync::Mutex};
 
@@ -406,17 +407,20 @@ macro_rules! map_enum {
 
 #[no_mangle]
 pub unsafe extern "C" fn wgpuCreateInstance(
-    descriptor: *const native::WGPUInstanceDescriptor,
+    descriptor: Option<&native::WGPUInstanceDescriptor>,
 ) -> native::WGPUInstance {
-    use conv::map_instance_descriptor;
-    let backends = follow_chain!(map_instance_descriptor(descriptor.as_ref().unwrap(),
+    let descriptor = descriptor.expect("invalid descriptor");
+
+    let instance_desc = follow_chain!(map_instance_descriptor(descriptor,
         WGPUSType_InstanceExtras => native::WGPUInstanceExtras
     ));
 
-    let context = Context::new("wgpu", wgc::hub::IdentityManagerFactory, backends);
-
     native::WGPUInstanceImpl {
-        context: Arc::new(context),
+        context: Arc::new(Context::new(
+            "wgpu",
+            wgc::hub::IdentityManagerFactory,
+            instance_desc,
+        )),
     }
     .into_handle()
 }
@@ -442,10 +446,12 @@ enum CreateSurfaceParams {
 #[no_mangle]
 pub unsafe extern "C" fn wgpuInstanceCreateSurface(
     instance: native::WGPUInstance,
-    descriptor: *const native::WGPUSurfaceDescriptor,
+    descriptor: Option<&native::WGPUSurfaceDescriptor>,
 ) -> native::WGPUSurface {
+    let descriptor = descriptor.expect("invalid descriptor");
+
     let create_surface_params = follow_chain!(
-        map_surface(descriptor.as_ref().unwrap(),
+        map_surface(descriptor,
             WGPUSType_SurfaceDescriptorFromWindowsHWND => native::WGPUSurfaceDescriptorFromWindowsHWND,
             WGPUSType_SurfaceDescriptorFromXcbWindow => native::WGPUSurfaceDescriptorFromXcbWindow,
             WGPUSType_SurfaceDescriptorFromXlibWindow => native::WGPUSurfaceDescriptorFromXlibWindow,
@@ -583,14 +589,16 @@ pub unsafe extern "C" fn wgpuSurfaceGetPreferredFormat(
         (v.id, &v.context)
     };
 
-    let preferred_format = match wgc::gfx_select!(adapter => context.surface_get_supported_formats(surface, adapter))
+    let preferred_format = match wgc::gfx_select!(adapter => context.surface_get_capabilities(surface, adapter))
     {
-        Ok(formats) => conv::to_native_texture_format(
-            *formats
-                .first()
+        Ok(caps) => conv::to_native_texture_format(
+            *caps
+                .formats
+                .first() // first format in the vector is preferred
                 .expect("Could not get preferred swap chain format"),
-        ),
-        Err(err) => panic!("Could not get preferred swap chain format: {}", err),
+        )
+        .expect("Could not get preferred swap chain format"),
+        Err(err) => panic!("Could not get preferred swap chain format: {err:?}"),
     };
 
     preferred_format
@@ -610,13 +618,17 @@ pub unsafe extern "C" fn wgpuSurfaceGetSupportedFormats(
     let (adapter, _) = adapter.unwrap_handle();
     assert!(count.is_some(), "count must be non-null");
 
-    let mut native_formats = match wgc::gfx_select!(adapter => context.surface_get_supported_formats(surface, adapter))
+    let mut native_formats = match wgc::gfx_select!(adapter => context.surface_get_capabilities(surface, adapter))
     {
-        Ok(formats) => formats
+        Ok(caps) => caps
+            .formats
             .iter()
-            .map(|f| conv::to_native_texture_format(*f))
+            // some texture formats are not in webgpu.h and
+            // conv::to_native_texture_format return None for them.
+            // so, filter them out.
+            .filter_map(|f| conv::to_native_texture_format(*f))
             .collect::<Vec<native::WGPUTextureFormat>>(),
-        Err(err) => panic!("Could not get supported swap chain formats: {}", err),
+        Err(err) => panic!("Could not get supported swap chain formats: {err:?}"),
     };
     native_formats.shrink_to_fit();
 
@@ -638,9 +650,10 @@ pub unsafe extern "C" fn wgpuSurfaceGetSupportedPresentModes(
     let (adapter, context) = adapter.unwrap_handle();
     assert!(count.is_some(), "count must be non-null");
 
-    let mut modes = match wgc::gfx_select!(adapter => context.surface_get_supported_present_modes(surface, adapter))
+    let mut modes = match wgc::gfx_select!(adapter => context.surface_get_capabilities(surface, adapter))
     {
-        Ok(modes) => modes
+        Ok(caps) => caps
+            .present_modes
             .iter()
             .filter_map(|f| match *f {
                 wgt::PresentMode::Fifo => Some(native::WGPUPresentMode_Fifo),
@@ -652,7 +665,7 @@ pub unsafe extern "C" fn wgpuSurfaceGetSupportedPresentModes(
                 | wgt::PresentMode::FifoRelaxed => None, // needs to be supported in webgpu.h
             })
             .collect::<Vec<native::WGPUPresentMode>>(),
-        Err(err) => panic!("Could not get supported present modes: {}", err),
+        Err(err) => panic!("Could not get supported present modes: {err:?}"),
     };
     modes.shrink_to_fit();
 
@@ -667,10 +680,13 @@ pub unsafe extern "C" fn wgpuSurfaceGetSupportedPresentModes(
 #[no_mangle]
 pub unsafe extern "C" fn wgpuGenerateReport(
     instance: native::WGPUInstance,
-    native_report: &mut native::WGPUGlobalReport,
+    native_report: Option<&mut native::WGPUGlobalReport>,
 ) {
     let context = &instance.as_ref().expect("invalid instance").context;
-    conv::write_global_report(native_report, context.generate_report());
+    conv::write_global_report(
+        native_report.expect("invalid return pointer"),
+        context.generate_report(),
+    );
 }
 
 struct DeviceCallback<T> {
@@ -734,10 +750,10 @@ pub fn handle_device_error_raw(device: id::DeviceId, typ: native::WGPUErrorType,
                 let cbs = CALLBACKS.lock().unwrap();
                 let cb = cbs.device_lost.get(&device);
                 if let Some(cb) = cb {
-                    (*cb).callback.unwrap()(
+                    cb.callback.unwrap()(
                         native::WGPUDeviceLostReason_Destroyed,
                         msg_c.as_ptr(),
-                        (*cb).userdata,
+                        cb.userdata,
                     );
                 }
             }
@@ -745,7 +761,7 @@ pub fn handle_device_error_raw(device: id::DeviceId, typ: native::WGPUErrorType,
                 let cbs = CALLBACKS.lock().unwrap();
                 let cb = cbs.uncaptured_errors.get(&device);
                 if let Some(cb) = cb {
-                    (*cb).callback.unwrap()(typ, msg_c.as_ptr(), (*cb).userdata);
+                    cb.callback.unwrap()(typ, msg_c.as_ptr(), cb.userdata);
                 }
             }
         }
@@ -760,13 +776,13 @@ pub fn handle_device_error<E: std::any::Any + std::error::Error>(device: id::Dev
         _ => native::WGPUErrorType_Unknown,
     };
 
-    handle_device_error_raw(device, typ, &format!("{:?}", error));
+    handle_device_error_raw(device, typ, &format!("{error:?}"));
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn wgpuFree(ptr: *mut u8, size: usize, align: usize) {
     std::alloc::dealloc(
         ptr,
-        core::alloc::Layout::from_size_align_unchecked(size, align),
+        core::alloc::Layout::from_size_align(size, align).unwrap(),
     );
 }
