@@ -477,7 +477,7 @@ dependencies = [
 [[package]]
 name = "naga"
 version = "0.11.0"
-source = "git+https://github.com/gfx-rs/naga?rev=4b796b157cb2b67b0ab166a2238fe4e9473bfd52#4b796b157cb2b67b0ab166a2238fe4e9473bfd52"
+source = "git+https://github.com/gfx-rs/naga?rev=f0edae8#f0edae8ce9e55eeef489fc53b10dc95fb79561cc"
 dependencies = [
  "bit-set",
  "bitflags",
@@ -886,7 +886,7 @@ dependencies = [
 [[package]]
 name = "wgpu-core"
 version = "0.15.0"
-source = "git+https://github.com/wozeparrot/wgpu?rev=fb1b251e8bb7914d297d03d92518235adabb1cd4#fb1b251e8bb7914d297d03d92518235adabb1cd4"
+source = "git+https://github.com/wozeparrot/wgpu?rev=4d786d2b3da33da0541858cfb3020d7af183f8cf#4d786d2b3da33da0541858cfb3020d7af183f8cf"
 dependencies = [
  "arrayvec",
  "bit-vec",
@@ -910,7 +910,7 @@ dependencies = [
 [[package]]
 name = "wgpu-hal"
 version = "0.15.1"
-source = "git+https://github.com/wozeparrot/wgpu?rev=fb1b251e8bb7914d297d03d92518235adabb1cd4#fb1b251e8bb7914d297d03d92518235adabb1cd4"
+source = "git+https://github.com/wozeparrot/wgpu?rev=4d786d2b3da33da0541858cfb3020d7af183f8cf#4d786d2b3da33da0541858cfb3020d7af183f8cf"
 dependencies = [
  "android_system_properties",
  "arrayvec",
@@ -963,7 +963,7 @@ dependencies = [
 [[package]]
 name = "wgpu-types"
 version = "0.15.0"
-source = "git+https://github.com/wozeparrot/wgpu?rev=fb1b251e8bb7914d297d03d92518235adabb1cd4#fb1b251e8bb7914d297d03d92518235adabb1cd4"
+source = "git+https://github.com/wozeparrot/wgpu?rev=4d786d2b3da33da0541858cfb3020d7af183f8cf#4d786d2b3da33da0541858cfb3020d7af183f8cf"
 dependencies = [
  "bitflags",
  "js-sys",
