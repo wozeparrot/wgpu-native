@@ -1108,13 +1108,13 @@ pub unsafe extern "C" fn wgpuTextureCreateView(
                 mip_level_count: match descriptor.mipLevelCount {
                     0 => panic!("invalid mipLevelCount"),
                     native::WGPU_MIP_LEVEL_COUNT_UNDEFINED => None,
-                    _ => Some(NonZeroU32::new_unchecked(descriptor.mipLevelCount)),
+                    _ => Some(descriptor.mipLevelCount),
                 },
                 base_array_layer: descriptor.baseArrayLayer,
                 array_layer_count: match descriptor.arrayLayerCount {
                     0 => panic!("invalid arrayLayerCount"),
                     native::WGPU_ARRAY_LAYER_COUNT_UNDEFINED => None,
-                    _ => Some(NonZeroU32::new_unchecked(descriptor.arrayLayerCount)),
+                    _ => Some(descriptor.arrayLayerCount),
                 },
             },
         },
