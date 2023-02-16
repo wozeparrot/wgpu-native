@@ -467,7 +467,9 @@ pub unsafe extern "C" fn wgpuInstanceCreateSurface(
         #[cfg(any(target_os = "ios", target_os = "macos"))]
         CreateSurfaceParams::Metal(layer) => context.instance_create_surface_metal(layer, ()),
         #[cfg(target_arch = "wasm32")]
-        CreateSurfaceParams::Canvas(canvas) => context.create_surface_webgl_canvas(&canvas, ()),
+        CreateSurfaceParams::Canvas(canvas) => {
+            context.create_surface_webgl_canvas(&canvas, ()).unwrap()
+        }
     };
 
     surface_id.into_handle_with_context(context)
