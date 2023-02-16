@@ -55,6 +55,13 @@ rev = "4d786d2b3da33da0541858cfb3020d7af183f8cf"
 version = "0.15.0"
 features = ["vulkan"]
 
+[target.'cfg(target_arch = "wasm32")'.dependencies.wgc]
+package = "wgpu-core"
+git = "https://github.com/wozeparrot/wgpu"
+rev = "4d786d2b3da33da0541858cfb3020d7af183f8cf"
+version = "0.15.0"
+features = ["id32"]
+
 [dependencies.wgt]
 package = "wgpu-types"
 git = "https://github.com/wozeparrot/wgpu"
@@ -72,6 +79,10 @@ raw-window-handle = "0.5"
 paste = "1.0"
 log = "0.4"
 thiserror = "1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+web-sys = "0.3.61"
+wasm-bindgen = "0.2.84"
 
 [build-dependencies]
 bindgen = "0.63"
