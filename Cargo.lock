@@ -201,8 +201,7 @@ dependencies = [
 [[package]]
 name = "d3d12"
 version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8f0de2f5a8e7bd4a9eec0e3c781992a4ce1724f68aec7d7a3715344de8b39da"
+source = "git+https://github.com/gfx-rs/d3d12-rs?rev=b940b1d71#b940b1d71ab7083ae80eec697872672dc1f2bd32"
 dependencies = [
  "bitflags",
  "libloading",
@@ -888,7 +887,7 @@ dependencies = [
 [[package]]
 name = "wgpu-core"
 version = "0.15.0"
-source = "git+https://github.com/wozeparrot/wgpu?rev=4d786d2b3da33da0541858cfb3020d7af183f8cf#4d786d2b3da33da0541858cfb3020d7af183f8cf"
+source = "git+https://github.com/wozeparrot/wgpu?rev=ee67cdbd4691772647a8ee6a42be933d78e0119f#ee67cdbd4691772647a8ee6a42be933d78e0119f"
 dependencies = [
  "arrayvec",
  "bit-vec",
@@ -901,6 +900,7 @@ dependencies = [
  "profiling",
  "raw-window-handle",
  "ron",
+ "rustc-hash",
  "serde",
  "smallvec",
  "thiserror",
@@ -912,7 +912,7 @@ dependencies = [
 [[package]]
 name = "wgpu-hal"
 version = "0.15.1"
-source = "git+https://github.com/wozeparrot/wgpu?rev=4d786d2b3da33da0541858cfb3020d7af183f8cf#4d786d2b3da33da0541858cfb3020d7af183f8cf"
+source = "git+https://github.com/wozeparrot/wgpu?rev=ee67cdbd4691772647a8ee6a42be933d78e0119f#ee67cdbd4691772647a8ee6a42be933d78e0119f"
 dependencies = [
  "android_system_properties",
  "arrayvec",
@@ -923,7 +923,6 @@ dependencies = [
  "core-graphics-types",
  "d3d12",
  "foreign-types",
- "fxhash",
  "glow",
  "gpu-alloc",
  "gpu-descriptor",
@@ -939,6 +938,7 @@ dependencies = [
  "profiling",
  "range-alloc",
  "raw-window-handle",
+ "rustc-hash",
  "smallvec",
  "thiserror",
  "wasm-bindgen",
@@ -967,7 +967,7 @@ dependencies = [
 [[package]]
 name = "wgpu-types"
 version = "0.15.0"
-source = "git+https://github.com/wozeparrot/wgpu?rev=4d786d2b3da33da0541858cfb3020d7af183f8cf#4d786d2b3da33da0541858cfb3020d7af183f8cf"
+source = "git+https://github.com/wozeparrot/wgpu?rev=ee67cdbd4691772647a8ee6a42be933d78e0119f#ee67cdbd4691772647a8ee6a42be933d78e0119f"
 dependencies = [
  "bitflags",
  "js-sys",
