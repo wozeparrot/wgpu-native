@@ -182,6 +182,17 @@ map_enum!(
     Compute
 );
 
+map_enum!(
+    map_composite_alpha_mode,
+    WGPUCompositeAlphaMode,
+    wgt::CompositeAlphaMode,
+    Auto,
+    Opaque,
+    PreMultiplied,
+    PostMultiplied,
+    Inherit
+);
+
 pub const WGPU_WHOLE_SIZE: ::std::os::raw::c_ulonglong = native::WGPU_WHOLE_SIZE as _;
 pub const WGPU_LIMIT_U64_UNDEFINED: ::std::os::raw::c_ulonglong =
     native::WGPU_LIMIT_U64_UNDEFINED as _;
@@ -913,7 +924,7 @@ pub fn features_to_native(features: wgt::Features) -> Vec<native::WGPUFeatureNam
         temp.push(native::WGPUFeatureName_IndirectFirstInstance);
     }
 
-    // native only features
+    // wgpu-rs only features
     if features.contains(wgt::Features::PUSH_CONSTANTS) {
         temp.push(native::WGPUNativeFeature_PUSH_CONSTANTS);
     }
@@ -946,14 +957,123 @@ pub fn map_feature(feature: native::WGPUFeatureName) -> Option<wgt::Features> {
         native::WGPUFeatureName_TextureCompressionETC2 => Some(Features::TEXTURE_COMPRESSION_ETC2),
         native::WGPUFeatureName_TextureCompressionASTC => Some(Features::TEXTURE_COMPRESSION_ASTC_LDR),
         native::WGPUFeatureName_IndirectFirstInstance => Some(Features::INDIRECT_FIRST_INSTANCE),
+        native::WGPUFeatureName_ShaderF16 => Some(Features::SHADER_FLOAT16),
 
-        // native only features
+        // wgpu-rs only features
         native::WGPUNativeFeature_PUSH_CONSTANTS => Some(Features::PUSH_CONSTANTS),
         native::WGPUNativeFeature_TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES => Some(Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES),
         native::WGPUNativeFeature_MULTI_DRAW_INDIRECT => Some(Features::MULTI_DRAW_INDIRECT),
         native::WGPUNativeFeature_MULTI_DRAW_INDIRECT_COUNT => Some(Features::MULTI_DRAW_INDIRECT_COUNT),
         native::WGPUNativeFeature_VERTEX_WRITABLE_STORAGE => Some(Features::VERTEX_WRITABLE_STORAGE),
 
+        // not available in wgpu-core
+        native::WGPUFeatureName_RG11B10UfloatRenderable => None,
+        native::WGPUFeatureName_BGRA8UnormStorage => None,
         _ => None,
+    }
+}
+
+pub fn to_native_present_mode(mode: wgt::PresentMode) -> Option<native::WGPUPresentMode> {
+    match mode {
+        wgt::PresentMode::Fifo => Some(native::WGPUPresentMode_Fifo),
+        wgt::PresentMode::Immediate => Some(native::WGPUPresentMode_Immediate),
+        wgt::PresentMode::Mailbox => Some(native::WGPUPresentMode_Mailbox),
+
+        wgt::PresentMode::AutoVsync
+        | wgt::PresentMode::AutoNoVsync
+        | wgt::PresentMode::FifoRelaxed => None, // needs to be supported in webgpu.h
+    }
+}
+
+pub fn to_native_composite_alpha_mode(
+    mode: wgt::CompositeAlphaMode,
+) -> native::WGPUCompositeAlphaMode {
+    match mode {
+        wgt::CompositeAlphaMode::Auto => native::WGPUCompositeAlphaMode_Auto,
+        wgt::CompositeAlphaMode::Opaque => native::WGPUCompositeAlphaMode_Opaque,
+        wgt::CompositeAlphaMode::PreMultiplied => native::WGPUCompositeAlphaMode_PreMultiplied,
+        wgt::CompositeAlphaMode::PostMultiplied => native::WGPUCompositeAlphaMode_PostMultiplied,
+        wgt::CompositeAlphaMode::Inherit => native::WGPUCompositeAlphaMode_Inherit,
+    }
+}
+
+pub fn map_swapchain_descriptor(
+    desc: &native::WGPUSwapChainDescriptor,
+    extras: Option<&native::WGPUSwapChainDescriptorExtras>,
+) -> wgt::SurfaceConfiguration<Vec<wgt::TextureFormat>> {
+    let (alpha_mode, view_formats) = match extras {
+        Some(extras) => (
+            match extras.alphaMode {
+                native::WGPUCompositeAlphaMode_Auto => wgt::CompositeAlphaMode::Auto,
+                native::WGPUCompositeAlphaMode_Opaque => wgt::CompositeAlphaMode::Opaque,
+                native::WGPUCompositeAlphaMode_PreMultiplied => {
+                    wgt::CompositeAlphaMode::PreMultiplied
+                }
+                native::WGPUCompositeAlphaMode_PostMultiplied => {
+                    wgt::CompositeAlphaMode::PostMultiplied
+                }
+                native::WGPUCompositeAlphaMode_Inherit => wgt::CompositeAlphaMode::Inherit,
+                _ => panic!("invalid alpha mode for swapchain descriptor"),
+            },
+            unsafe { make_slice(extras.viewFormats, extras.viewFormatCount) }
+                .iter()
+                .map(|f| {
+                    map_texture_format(*f).expect("invalid view format for swapchain descriptor")
+                })
+                .collect(),
+        ),
+        None => (wgt::CompositeAlphaMode::default(), Vec::new()),
+    };
+
+    wgt::SurfaceConfiguration {
+        usage: wgt::TextureUsages::from_bits(desc.usage).unwrap(),
+        format: map_texture_format(desc.format).expect("Texture format not defined"),
+        width: desc.width,
+        height: desc.height,
+        present_mode: map_present_mode(desc.presentMode),
+        alpha_mode,
+        view_formats,
+    }
+}
+
+pub fn map_query_set_descriptor<'a>(
+    desc: &native::WGPUQuerySetDescriptor,
+) -> wgt::QuerySetDescriptor<wgc::Label<'a>> {
+    wgt::QuerySetDescriptor {
+        label: OwnedLabel::new(desc.label).into_cow(),
+        count: desc.count,
+        ty: match desc.type_ {
+            native::WGPUQueryType_Occlusion => wgt::QueryType::Occlusion,
+            native::WGPUQueryType_Timestamp => wgt::QueryType::Timestamp,
+            native::WGPUQueryType_PipelineStatistics => {
+                let mut types = wgt::PipelineStatisticsTypes::empty();
+
+                unsafe { make_slice(desc.pipelineStatistics, desc.pipelineStatisticsCount as _) }
+                    .iter()
+                    .for_each(|f| {
+                        types.insert(match *f {
+                            native::WGPUPipelineStatisticName_VertexShaderInvocations => {
+                                wgt::PipelineStatisticsTypes::VERTEX_SHADER_INVOCATIONS
+                            }
+                            native::WGPUPipelineStatisticName_ClipperInvocations => {
+                                wgt::PipelineStatisticsTypes::CLIPPER_INVOCATIONS
+                            }
+                            native::WGPUPipelineStatisticName_ClipperPrimitivesOut => {
+                                wgt::PipelineStatisticsTypes::CLIPPER_PRIMITIVES_OUT
+                            }
+                            native::WGPUPipelineStatisticName_FragmentShaderInvocations => {
+                                wgt::PipelineStatisticsTypes::FRAGMENT_SHADER_INVOCATIONS
+                            }
+                            native::WGPUPipelineStatisticName_ComputeShaderInvocations => {
+                                wgt::PipelineStatisticsTypes::COMPUTE_SHADER_INVOCATIONS
+                            }
+                            _ => panic!("invalid pipeline statistics name"),
+                        });
+                    });
+
+                wgt::QueryType::PipelineStatistics(types)
+            }
+            _ => panic!("invalid query type"),
+        },
     }
 }

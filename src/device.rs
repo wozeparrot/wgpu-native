@@ -1,5 +1,6 @@
 use crate::conv::{
     map_adapter_options, map_device_descriptor, map_pipeline_layout_descriptor, map_shader_module,
+    map_swapchain_descriptor,
 };
 use crate::native::{
     unwrap_swap_chain_handle, Handle, IntoHandle, IntoHandleWithContext, UnwrapId,
@@ -499,10 +500,14 @@ pub unsafe extern "C" fn wgpuDeviceCreateBindGroupLayout(
                     x => panic!("Unknown Buffer Type: {x}"),
                 },
                 has_dynamic_offset: entry.buffer.hasDynamicOffset,
-                min_binding_size: match entry.buffer.minBindingSize {
-                    0 => panic!("invalid minBindingSize"),
-                    conv::WGPU_WHOLE_SIZE => None,
-                    _ => Some(NonZeroU64::new_unchecked(entry.buffer.minBindingSize)),
+                min_binding_size: {
+                    assert_ne!(
+                        entry.buffer.minBindingSize,
+                        conv::WGPU_WHOLE_SIZE,
+                        "invalid minBindingSize, use 0 instead"
+                    );
+
+                    NonZeroU64::new(entry.buffer.minBindingSize)
                 },
             }
         } else {
@@ -694,11 +699,11 @@ pub unsafe extern "C" fn wgpuQueueSubmit(
 
     let mut command_buffers = Vec::new();
     for command_buffer in make_slice(commands, command_count as usize) {
-        let ptr = (*command_buffer) as native::WGPUCommandBuffer;
-        // NOTE: Automaticaly drop the command buffer
+        let ptr = *command_buffer;
         if ptr.is_null() {
             panic!("invalid command buffer");
         }
+        // NOTE: Automaticaly drop the command buffer
         let buffer_id = Box::from_raw(ptr).id;
         command_buffers.push(buffer_id)
     }
@@ -717,9 +722,13 @@ pub unsafe extern "C" fn wgpuQueueSubmitForIndex(
 
     let mut command_buffers = Vec::new();
     for command_buffer in make_slice(commands, command_count as usize) {
-        let ptr = (*command_buffer) as native::WGPUCommandBuffer;
-        let (id, _) = ptr.unwrap_handle();
-        command_buffers.push(id)
+        let ptr = *command_buffer;
+        if ptr.is_null() {
+            panic!("invalid command buffer");
+        }
+        // NOTE: Automaticaly drop the command buffer
+        let buffer_id = Box::from_raw(ptr).id;
+        command_buffers.push(buffer_id)
     }
 
     let submission_index = gfx_select!(queue => context.queue_submit(queue, &command_buffers))
@@ -822,10 +831,10 @@ pub unsafe extern "C" fn wgpuBufferGetMappedRange(
     buffer: native::WGPUBuffer,
     offset: usize,
     size: usize,
-) -> *mut u8 {
+) -> *mut ::std::os::raw::c_void {
     let (buffer, context) = buffer.unwrap_handle();
 
-    gfx_select!(buffer => context.buffer_get_mapped_range(
+    let (buf, _) = gfx_select!(buffer => context.buffer_get_mapped_range(
         buffer,
         offset as u64,
         match size {
@@ -833,8 +842,30 @@ pub unsafe extern "C" fn wgpuBufferGetMappedRange(
             _ => Some(size as u64),
         }
     ))
-    .expect("Unable to get mapped range")
-    .0
+    .expect("Unable to get mapped range");
+
+    buf as *mut ::std::os::raw::c_void
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wgpuBufferGetConstMappedRange(
+    buffer: native::WGPUBuffer,
+    offset: usize,
+    size: usize,
+) -> *const ::std::os::raw::c_void {
+    let (buffer, context) = buffer.unwrap_handle();
+
+    let (buf, _) = gfx_select!(buffer => context.buffer_get_mapped_range(
+        buffer,
+        offset as u64,
+        match size {
+            conv::WGPU_WHOLE_MAP_SIZE => None,
+            _ => Some(size as u64),
+        }
+    ))
+    .expect("Unable to get mapped range");
+
+    buf as *const ::std::os::raw::c_void
 }
 
 #[no_mangle]
@@ -1012,19 +1043,12 @@ pub unsafe extern "C" fn wgpuDeviceCreateSwapChain(
 ) -> native::WGPUSwapChain {
     let (device, _) = device.unwrap_handle();
     let (surface, context) = surface.unwrap_handle();
-    let descriptor = descriptor.expect("invalid descriptor");
+    let config = follow_chain!(
+        map_swapchain_descriptor(
+            descriptor.expect("invalid descriptor"),
+            WGPUSType_SwapChainDescriptorExtras => native::WGPUSwapChainDescriptorExtras)
+    );
 
-    // The swap chain API of wgpu-core (and WebGPU) has been merged into the surface API,
-    // so this gets a bit weird until the webgpu.h changes accordingly.
-    let config = wgt::SurfaceConfiguration {
-        usage: wgt::TextureUsages::from_bits(descriptor.usage).unwrap(),
-        format: conv::map_texture_format(descriptor.format).expect("Texture format not defined"),
-        width: descriptor.width,
-        height: descriptor.height,
-        present_mode: conv::map_present_mode(descriptor.presentMode),
-        alpha_mode: wgt::CompositeAlphaMode::Auto,
-        view_formats: Vec::new(),
-    };
     let error = gfx_select!(device => context.surface_configure(surface, device, &config));
     if let Some(error) = error {
         handle_device_error(device, &error);
@@ -1276,6 +1300,24 @@ pub unsafe extern "C" fn wgpuComputePipelineGetBindGroupLayout(
             "Failed to get compute pipeline bind group layout: {:?}",
             error
         );
+        std::ptr::null_mut()
+    } else {
+        id.into_handle_with_context(context)
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wgpuDeviceCreateQuerySet(
+    device: native::WGPUDevice,
+    descriptor: Option<&native::WGPUQuerySetDescriptor>,
+) -> native::WGPUQuerySet {
+    let (device, context) = device.unwrap_handle();
+
+    let desc = conv::map_query_set_descriptor(descriptor.expect("invalid query set descriptor"));
+
+    let (id, error) = gfx_select!(device => context.device_create_query_set(device, &desc, ()));
+    if let Some(error) = error {
+        handle_device_error(device, &error);
         std::ptr::null_mut()
     } else {
         id.into_handle_with_context(context)
